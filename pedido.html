@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Itens para Pedido - Exportar PDF</title>
+<style>
+  :root { --ink:#111; --muted:#666; --teal:#009688; --line:#e5e7eb; }
+  body { font-family: Arial, sans-serif; margin: 24px; color: var(--ink); }
+  .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  h1 { margin: 0; font-size: 20px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .btn { padding: 10px 14px; border: 0; border-radius: 8px; background: var(--teal); color: #fff; cursor: pointer; }
+  .no-print { display: inline-flex; gap:8px; align-items:center; }
+  table {
+    width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
+  th { background: var(--teal); color: #fff; padding: 12px 14px; text-align: left; font-weight: 600; }
+  td { padding: 12px 14px; background: #fff; border-top: 1px solid var(--line); }
+  tr:nth-child(even) td { background: #fafafa; }
+  tfoot td { font-weight: 600; background:#f5f5f5; }
+  .empty { border:2px dashed var(--line); border-radius:10px; padding: 28px; text-align:center; color:var(--muted); }
+  @media print { .no-print, .no-print * { display: none !important; } body { margin: 0.8cm; } }
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>Itens para Pedido</h1>
+    <div class="muted" id="stamp"></div>
+  </div>
+  <div class="no-print">
+    <button class="btn" onclick="window.print()">Salvar como PDF</button>
+  </div>
+</div>
+<div id="root"></div>
+<script>
+  function formatStamp() {
+    const d = new Date();
+    const fmt = d.toLocaleString('pt-BR');
+    document.getElementById('stamp').textContent = 'Gerado em ' + fmt;
+  }
+  formatStamp();
+
+  function render(lista) {
+    const root = document.getElementById('root');
+    if (!Array.isArray(lista) || lista.length === 0) {
+      root.innerHTML = '<div class="empty">Nenhum item para pedido encontrado. Gere a lista na página principal primeiro.</div>';
+      return;
+    }
+    let totalPedir = 0;
+    const rows = lista.map(it => {
+      const pedir = Number(it.pedir)||0;
+      totalPedir += pedir;
+      return `<tr>
+        <td>${it.referencia}</td>
+        <td>${it.volume || ''}</td>
+        <td style="text-align:right">${it.atual}</td>
+        <td style="text-align:right">${it.minimo}</td>
+        <td style="text-align:right">${pedir}</td>
+      </tr>`;
+    }).join('');
+    root.innerHTML = `<table>
+      <thead><tr>
+        <th>Referência</th><th>Volume</th><th style="text-align:right">Atual</th><th style="text-align:right">Mínimo</th><th style="text-align:right">Pedir</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="4">Total de itens com pedido</td><td style="text-align:right">${totalPedir}</td></tr></tfoot>
+    </table>`;
+  }
+
+  try {
+    const lista = JSON.parse(localStorage.getItem('itensParaPedido') || '[]');
+    render(lista);
+  } catch (e) {
+    render([]);
+  }
+</script>
+</body>
+</html>
